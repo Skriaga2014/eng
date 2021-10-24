@@ -4,6 +4,8 @@ WORD = 'fluently'
 N = 3
 
 base = pd.read_csv('111.csv')
+print(base)
+print(base['word'].iloc[8048])
 
 
 for i in range(N + 1):

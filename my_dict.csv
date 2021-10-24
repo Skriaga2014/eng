@@ -1,15 +1,15 @@
 id,word,transcription,translate,shows,result
-1326,fluently,[ˈfluːəntlɪ],"бегло, свободно",0,0
-10004,these shoes,[ðiːz ʃuːz],эта обувь,0,0
-2589,nowadays,[ˈnaʊədeɪz],в наше время,0,0
+2589,nowadays,[ˈnaʊədeɪz],в наше время,2,1
+10004,these shoes,[ðiːz ʃuːz],эта обувь,1,1
+429,trousers,[ˈtraʊzərz],брюки,2,1
+1484,refuse,[ˈrefjuːs],отказывать,1,1
+716,admire,[ədˈmaɪər],восхищаться,1,1
+638,foreign,[ˈfɔːrən],иностранный,1,1
+1326,fluently,[ˈfluːəntlɪ],"бегло, свободно",1,1
+10003,try on,[ˈtraɪ ɑːn],примерять,1,1
+5043,surprising,[sərˈpraɪzɪŋ],удивительно,1,1
+10001,go for a walk,[ɡoʊ fər æ wɔːk],идти гулять,1,1
+917,sentence,[ˈsentəns],"предложение, приговор",2,1
 10005,spend on,[spend ɑːn],тратить на,1,1
-5043,surprising,[sərˈpraɪzɪŋ],удивительно,0,0
-638,foreign,[ˈfɔːrən],иностранный,0,0
-10003,try on,[ˈtraɪ ɑːn],примерять,0,0
-429,trousers,[ˈtraʊzərz],брюки,0,0
-1633,obvious,[ˈɑːbvɪəs],очевидно,0,0
-3324,salad,[ˈsæləd],салат,4,4
-10001,go for a walk,[ɡoʊ fər æ wɔːk],идти гулять,4,4
-1484,refuse,[ˈrefjuːs],отказывать,5,5
-716,admire,[ədˈmaɪər],восхищаться,7,5
-917,sentence,[ˈsentəns],"предложение, приговор",7,6
+3324,salad,[ˈsæləd],салат,2,2
+1633,obvious,[ˈɑːbvɪəs],очевидно,2,2
