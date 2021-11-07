@@ -1,0 +1,5 @@
+/venv/
+/.idea/
+.gitignore
+test.py
+my_dict2.csv

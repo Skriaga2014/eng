@@ -1,117 +1,123 @@
+"""
+Программа изучения слов иностранного языка.
+Выводит случайное слово из числа (VARS_NUM) слов, которые были верно переведены минимальное число раз.
+Направление перевода (на русский или с русского) выбирается случайным образом.
+"""
+
 import pandas as pd
 import datetime as dt
-
-
-VARS_NUM = 5
-TYPE = 'en' # 'ru_en'/'en_ru'/'ru'/'en'
-BASE_FILE = 'my_dict.csv'
-BASE_FILE_RESERVE = 'my_dict_r.csv'
+import os
+import random as rnd
 
 
 # load dictionary
-def get_base(file, file_r, type_=TYPE, vars_num=VARS_NUM):
-    # проверка, не затесалось ли nan в shows и/или result
-    #file = '1231.csv'
+def get_base():
+    # проверка, есть ли nan в shows и/или result
     try:
-        base = pd.read_csv(file, dtype={'shows': int, 'result': int})
-    except ValueError:
-        base = pd.read_csv(file).fillna(0)
+        base = pd.read_csv(BASE_FILE, dtype={'shows': int, 'result': int})
+    except ValueError:  # если nan найдено
+        base = pd.read_csv(BASE_FILE).fillna(0)
         base = base.astype({'shows': 'int32', 'result': int})
-    except KeyError:
-        base = pd.read_csv(file_r).fillna(0)
+    except KeyError:    # если проблема с базой в результате сбоя предыдущей выгрузки
+        base = pd.read_csv(BASE_FILE_RESERVE).fillna(0)
         base = base.astype({'shows': 'int32', 'result': int})
 
-    if len(base) < vars_num:
+    if len(base) < VARS_NUM:    # если количество слов в базе меньше
         vars_num = len(base)
-
-    if type_ in ['en', 'ru']:
-        base = base.sort_values('result').head(vars_num)
-    #base = base.set_index(base['id'])
-    print(base)
-    return base
-
-
-# create task and variants
-def get_task_vars(base, VARS_NUM, TYPE):
-    def show_question(task, variants, TYPE):
-        if TYPE == 'ru_en':
-            print(task['translate'].iloc[0])
-            print(variants[['word', 'transcription']])
-        elif TYPE == 'en_ru':
-            print(task['word'].iloc[0], task['transcription'].iloc[0])
-            print(variants['translate'])
-        elif TYPE == 'ru':
-            print(task['word'].iloc[0], task['transcription'].iloc[0])
-        elif TYPE == 'en':
-            print(task['translate'].iloc[0])
-        else:
-            exit(f'unknown TYPE: {TYPE}')
-
-    if TYPE in ['ru_en', 'en_ru']:
-        variants = base.sample(VARS_NUM)
-        variants.index = [i for i in range(1, VARS_NUM + 1)]
-        task = variants.sample()
     else:
-        if len(base) < 4:
-            exit('ERROR: Too short len of base')
-        task = base.sample(VARS_NUM)
-        variants = None
+        vars_num = VARS_NUM
 
-    show_question(task, variants, TYPE)
-    return task, variants
+    base = base.sort_values('result')
+    base_new = base.head(vars_num).sample(frac=1)
+    base_add = base.tail(len(base) - vars_num)
 
-
-# Проверка ответа 0/1
-def get_check(answer, task, TYPE):
-    if (answer.isnumeric() and int(answer) == task.index.tolist()[0]) or \
-        (TYPE == 'ru' and answer == task['translate'].tolist()[0]) or \
-        (TYPE == 'en' and answer == task['word'].tolist()[0]):
-        return 1
-    else:
-        return 0
+    return base_new, base_add
 
 
-def to_log(typee, task, variants, answer, check, file):
-    line = f'\n{dt.datetime.now()};'
-    match typee:
-        case 'eng' | 'ru_en':
-            if typee == 'ru_en':
-                answer = variants.iloc[answer]['word'].to_list()[0]
-            line += f'{typee};{task["id"].to_list()[0]};' \
-                    f'{task["translate"].to_line()[0]};' \
-                    f'{task["word"].to_list()[0]};'
-        case 'ru' | 'en_ru':
-            if typee == 'ru_en':
-                answer = variants.iloc[answer]['translate'].to_list()[0]
-            line += f'{typee};{task["id"].to_list()[0]};' \
-                    f'{task["word"].to_list()[0]};' \
-                    f'{task["translate"].to_list()[0]};'
-
-    line += f'{answer};{check}'
+def to_log(log):    # date,variants, type,id,task,target,answer,result
+    line = f'\n{dt.datetime.now()},{SHOW_VARIANTS},'
+    log_items = ['lang', 'idx', 'task', 'right_answer', 'answer', 'check']
+    line += ','.join([str(log[i]) for i in log_items])
     print(line)
 
-    with open(file, 'a') as f:
+    with open(LOG_FILE, 'a') as f:
         f.write(line)
 
 
-def base_update(base, task, check, base_file, base_file_reserve):
-    base.loc[base['id'] == task['id'][0], ['shows']] += 1
-    if check:
-        base.loc[base['id'] == task['id'][0], ['result']] += 1
-    base.to_csv(base_file, index=0)
-    base.to_csv(base_file_reserve, index=0)
+def base_update(base, base_add, log):
+    base.loc[base['id'] == log['idx'], ['shows']] += 1
+    if log['check']:
+        base.loc[base['id'] == log['idx'], ['result']] += 1
+    base_final = pd.concat([base, base_add])
+
+    base_final.to_csv(BASE_FILE, index=0)
+    base_final.to_csv(BASE_FILE_RESERVE, index=0)
+
+
+def get_task(base, lang):
+    sample = base.sample()
+    if lang == 'en':
+        task = sample['translate'].iloc[0]
+        right_answer = sample['word'].iloc[0]
+    else:
+        task = sample['word'].iloc[0]
+        right_answer = sample['translate'].iloc[0]
+    if '/' in task:
+        task = task.split('/')
+    idx = sample['id'].iloc[0]
+    return idx, task, right_answer
+
+
+def get_check(answer, right_answer):
+    if answer == right_answer or answer in right_answer:
+        print('yes')
+        return 1
+    else:
+        print('no')
+        print(f'({right_answer})')
+        return 0
+
+
+def run(base, lang):
+    idx, task, right_answer = get_task(base, lang)
+    if SHOW_VARIANTS:
+        print(task)
+        variants = base['translate'] if lang == 'ru' else base[['word', 'transcription']]
+        variants.index = range(1, len(base) + 1)
+        print(variants)
+        answer = input('Enter number or word: ')
+        if answer.isdigit():
+            if lang == 'ru':
+                answer = variants.loc[int(answer)]
+            else:
+                answer = variants.loc[int(answer), 'word']
+    else:
+        answer = input(f'{task}: ')
+
+    check = get_check(answer, right_answer)
+
+    return {'check': check, 'idx': idx, 'task': task,
+            'right_answer': right_answer,
+            'answer': answer, 'lang': lang}
+
 
 # main
 def go():
-    base = get_base(BASE_FILE, BASE_FILE_RESERVE)
-    task, variants = get_task_vars(base, VARS_NUM, TYPE)
-    answer = input('answer: ')
-    check = get_check(answer, task, TYPE)
-    base_update(base, task, check, BASE_FILE, BASE_FILE_RESERVE)
-    print('right' if check else f'wrong ({task["translate"].tolist()[0]})\n')
-    to_log(TYPE, task, variants, answer, check, 'log.csv')
+    lang = rnd.choice(['en', 'ru'])
+    base, base_add = get_base()
+    log = run(base, lang)
+    to_log(log)
+    base_update(base, base_add, log)
 
 
+SHOW_VARIANTS = False    # показывать ли варианты ответов
+VARS_NUM = 5
+BASE_FILE = os.path.join(os.getcwd(), 'my_dict.csv')
+BASE_FILE_RESERVE = os.path.join(os.getcwd(), 'my_dict_r.csv')
+LOG_FILE = os.path.join(os.getcwd(), 'log.csv')
+
+
+pd.set_option('display.expand_frame_repr', False)
 while 1:
     go()
 
