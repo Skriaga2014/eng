@@ -34,16 +34,17 @@ def get_base():
     return base_new, base_add
 
 
+# send to log
 def to_log(log):    # date,variants, type,id,task,target,answer,result
     line = f'\n{dt.datetime.now()},{SHOW_VARIANTS},'
     log_items = ['lang', 'idx', 'task', 'right_answer', 'answer', 'check']
     line += ','.join([str(log[i]) for i in log_items])
-    print(line)
 
     with open(LOG_FILE, 'a') as f:
         f.write(line)
 
 
+# update my dict
 def base_update(base, base_add, log):
     base.loc[base['id'] == log['idx'], ['shows']] += 1
     if log['check']:
@@ -54,6 +55,7 @@ def base_update(base, base_add, log):
     base_final.to_csv(BASE_FILE_RESERVE, index=0)
 
 
+# get word for translate
 def get_task(base, lang):
     sample = base.sample()
     if lang == 'en':
@@ -68,6 +70,7 @@ def get_task(base, lang):
     return idx, task, right_answer
 
 
+# check answer right or wrong
 def get_check(answer, right_answer):
     if answer == right_answer or answer in right_answer:
         print('yes')
@@ -78,10 +81,12 @@ def get_check(answer, right_answer):
         return 0
 
 
+# show task
 def run(base, lang):
     idx, task, right_answer = get_task(base, lang)
+    print_task = ', '.join(task) if type(task) == list else task
     if SHOW_VARIANTS:
-        print(task)
+        print(print_task)
         variants = base['translate'] if lang == 'ru' else base[['word', 'transcription']]
         variants.index = range(1, len(base) + 1)
         print(variants)
@@ -92,7 +97,7 @@ def run(base, lang):
             else:
                 answer = variants.loc[int(answer), 'word']
     else:
-        answer = input(f'{task}: ')
+        answer = input(f'{print_task}: ')
 
     check = get_check(answer, right_answer)
 
@@ -101,7 +106,7 @@ def run(base, lang):
             'answer': answer, 'lang': lang}
 
 
-# main
+# start program
 def go():
     lang = rnd.choice(['en', 'ru'])
     base, base_add = get_base()
